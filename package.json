@@ -1,0 +1,25 @@
+{
+  "name": "a4redux",
+  "version": "1.0.0",
+  "description": "Assignment 4 redu",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "YL",
+  "license": "ISC",
+  "dependencies": {
+    "asy": "0.0.6",
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.18.2",
+    "dotenv": "^5.0.1",
+    "express": "^4.16.3",
+    "jsonwebtoken": "^8.2.1",
+    "mongodb": "^3.0.6",
+    "mongoose": "^5.0.14",
+    "nodemon": "^1.17.3",
+    "passport": "^0.4.0",
+    "passport-http": "^0.3.0",
+    "passport-jwt": "^4.0.0"
+  }
+}
