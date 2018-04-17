@@ -182,8 +182,8 @@ router.route('/reviews').post(authJwtController.isAuthenticated, function (req, 
             var newReview = new Review();
             newReview.MovieTitle = req.body.MovieTitle;
             newReview.ReviewerName = req.body.ReviewerName;
-            newReview.smallQuote = req.body.smallQuote;
-            newReview.rating = req.body.rating;
+            newReview.Quote = req.body.Quote;
+            newReview.Rating = req.body.Rating;
             newReview.save(function (err) {
                 if (err) {
                     return res.send({success: false, message: "Failed to create a review"});
