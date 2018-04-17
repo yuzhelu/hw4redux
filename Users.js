@@ -2,6 +2,8 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var bcrypt = require('bcrypt-nodejs');
 
+mongoose.connect(process.env.mongoDB)
+
 var UserSchema = new Schema({
     name: String,
     username: { type: String, required: true, index: { unique: true }},
