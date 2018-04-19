@@ -39,8 +39,34 @@ router.route('/postjwt')
         }
     );
 
-router.route('/movie/:title')
+router.route('/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
+        //new add begin
+        if (req.query.reviews === 'true')
+        {
+            var title = req.params.title;
+            Movie.aggregate([
+                {
+                    $match: {
+                        Title: title
+                    }
+                },
+                {
+                    $lookup:
+                        {
+                            from: 'reviews',
+                            localField: 'Title',
+                            foreignField: 'MovieTitle',
+                            as: 'Reviews'
+                        }
+                }
+
+            ]).exec((err, movie)=>{
+                if (err) res.json({message: 'Failed to get review'});
+                res.json(movie);
+            });
+        }
+        //new add end
         Movie.findOne({Title: req.params.title}).exec(function(err, movie1) {
             if (err) res.send(err);
 
@@ -101,6 +127,33 @@ router.route('/movie/:title')
 
 router.route('/movies')
     .get(authJwtController.isAuthenticated, function (req, res) {
+//new add
+        if (req.query.reviews === 'true')
+        {
+            var title = req.params.title;
+            Movie.aggregate([
+                {
+                    $match: {
+                        Title: title
+                    }
+                },
+                {
+                    $lookup:
+                        {
+                            from: 'reviews',
+                            localField: 'Title',
+                            foreignField: 'MovieTitle',
+                            as: 'Reviews'
+                        }
+                }
+
+            ]).exec((err, movie)=>{
+                if (err) res.json({message: 'Failed to get review'});
+                res.json(movie);
+            });
+        }
+
+        //new add end
         Movie.find(function (err, movies) {
             if (err) res.send(err);
             // return the users
