@@ -76,10 +76,10 @@ router.route('/movie/:title')
     .put(authJwtController.isAuthenticated, function (req, res) {
         Movie.findOne({Title: req.params.title}).exec(function(err, movie) {
             if (movie !== null) {
-                movie.Title = req.body.Title;
-                movie.releaseYear = req.body.releaseYear;
-                movie.Genre = req.body.Genre;
-                movie.Actors = req.body.Actors;
+                newMovie.title = req.body.title;
+                newMovie.yearReleased = req.body.yearReleased;
+                newMovie.genre = req.body.genre;
+                newMovie.actors = req.body.actors;
                 movie.save(function(err) {
                     if (err) {
                         // duplicate entry
@@ -110,10 +110,10 @@ router.route('/movies')
 
     .post(authJwtController.isAuthenticated, function (req, res) {
         var newMovie = new Movie();
-        newMovie.Title = req.body.Title;
-        newMovie.releaseYear = req.body.releaseYear;
-        newMovie.Genre = req.body.Genre;
-        newMovie.Actors = req.body.Actors;
+        newMovie.title = req.body.title;
+        newMovie.yearReleased = req.body.yearReleased;
+        newMovie.genre = req.body.genre;
+        newMovie.actors = req.body.actors;
         // save the movie
         newMovie.save(function(err) {
             if (err) {
