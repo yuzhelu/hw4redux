@@ -19,21 +19,11 @@ mongoose.connect(process.env.mongoDB, (err, database) =>{
 
 })
 
-
-
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(passport.initialize());
 app.use(cors());
-
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Access-Control-Allow-Headers", "Origin,Content-Type, Authorization, x-id, Content-Length, X-Requested-With");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    next();
-});
 
 var router = express.Router();
 
@@ -49,34 +39,8 @@ router.route('/postjwt')
         }
     );
 
-router.route('/:title')
+router.route('/movie/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
-        //new add begin
-        if (req.query.reviews === 'true')
-        {
-            var title = req.params.title;
-            Movie.aggregate([
-                {
-                    $match: {
-                        Title: title
-                    }
-                },
-                {
-                    $lookup:
-                        {
-                            from: 'reviews',
-                            localField: 'Title',
-                            foreignField: 'MovieTitle',
-                            as: 'Reviews'
-                        }
-                }
-
-            ]).exec((err, movie)=>{
-                if (err) res.json({message: 'Failed to get review'});
-                res.json(movie);
-            });
-        }
-        //new add end
         Movie.findOne({Title: req.params.title}).exec(function(err, movie1) {
             if (err) res.send(err);
 
@@ -137,33 +101,6 @@ router.route('/:title')
 
 router.route('/movies')
     .get(authJwtController.isAuthenticated, function (req, res) {
-//new add
-        if (req.query.reviews === 'true')
-        {
-            var title = req.params.title;
-            Movie.aggregate([
-                {
-                    $match: {
-                        Title: title
-                    }
-                },
-                {
-                    $lookup:
-                        {
-                            from: 'reviews',
-                            localField: 'Title',
-                            foreignField: 'MovieTitle',
-                            as: 'Reviews'
-                        }
-                }
-
-            ]).exec((err, movie)=>{
-                if (err) res.json({message: 'Failed to get review'});
-                res.json(movie);
-            });
-        }
-
-        //new add end
         Movie.find(function (err, movies) {
             if (err) res.send(err);
             // return the users
@@ -191,36 +128,6 @@ router.route('/movies')
         });
     });
 
-router.route('movies/:movieId')
-    .get(authJwtController.isAuthenticated, function(req, res){
-        var id = req.params.movieId;
-        var review = req.headers.reviews;
-
-        Movie.findById(id, function(err, movie){
-            if(err) res.send(err)
-            if(review === "true"){
-                Movie.aggregate([{
-                    $lookup:{
-                        from: 'reviews',
-                        localField: 'Title',
-                        foreignField: 'MovieTitle',
-                        as: 'Reviews'
-                    }
-                },
-                    {
-                        $match:{title:movie.title}
-                    }
-                ], function(err, result){
-                    if(err) res.send(err);
-                    else res.json(result);
-                    });
-            }
-            else{
-                res.json(movie);
-            }
-        })
-
-    })
 router.route('/reviews/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
         if (req.query.reviews === 'true')
