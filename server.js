@@ -181,6 +181,36 @@ router.route('/movies')
         });
     });
 
+router.route('movies/:movieId')
+    .get(authJwtController.isAuthenticated, function(req, res){
+        var id = req.params.movieId;
+        var review = req.headers.reviews;
+
+        Movie.findById(id, function(err, movie){
+            if(err) res.send(err)
+            if(review === "true"){
+                Movie.aggregate([{
+                    $lookup:{
+                        from: 'reviews',
+                        localField: 'Title',
+                        foreignField: 'MovieTitle',
+                        as: 'Reviews'
+                    }
+                },
+                    {
+                        $match:{title:movie.title}
+                    }
+                ], function(err, result){
+                    if(err) res.send(err);
+                    else res.json(result);
+                    });
+            }
+            else{
+                res.json(movie);
+            }
+        })
+
+    })
 router.route('/reviews/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
         if (req.query.reviews === 'true')
