@@ -9,14 +9,14 @@ var actorSchema = Schema({
 });
 
 var movieSchema = Schema({
-    Title:{type: String, required: true, index: { unique: true }},
-    releaseYear: {type: Number, required: true},
-    Genre:{
+    title:{type: String, required: true, index: { unique: true }},
+    yearReleased: {type: Number, required: true},
+    genre:{
         type: String,
         enum: ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy',
             'Horror', 'Mystery', 'Thriller', 'Western']
     },
-    Actors: {type:[actorSchema]}
+    actors: {type:[actorSchema]}
 });
 
 movieSchema.pre('save',function (next) {
