@@ -41,7 +41,7 @@ router.route('/postjwt')
 
 router.route('/movie/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
-        Movie.findOne({Title: req.params.title}).exec(function(err, movie1) {
+        Movie.findOne({title: req.params.title}).exec(function(err, movie1) {
             if (err) res.send(err);
 
             //var userJson = JSON.stringify(movie);
@@ -127,7 +127,43 @@ router.route('/movies')
             res.json({ message: 'Movie created!' });
         });
     });
+/*
+router.route('/:movieId')
+    .get(authJwtController.isAuthenticated, function (req, res) {
+        var id = req.params.movieId;
+        var review = req.headers.reviews;
+        Movie.findById(id, function (err, movie) {
+            if (err) res.send(err);
 
+            // var movieJson = JSON.stringify(movie);
+            // return that user
+            if(review === "true"){
+                Movie.aggregate([{
+                    $lookup: {
+                        from: "reviews",
+                        localField: "title",
+                        foreignField: "movieTitle",
+                        as: 'review'
+                    }
+                },
+                    // {
+                    //     $unwind:"$review"
+                    // },
+                    {
+                        $match:{ title: movie.title }
+                    }
+
+                ], function (err, result) {
+                    if(err) res.send(err);
+                    else res.json(result);
+                });
+            } else {
+                res.json(movie);
+            }
+        });
+
+    })
+*/
 router.route('/reviews/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
         if (req.query.reviews === 'true')
@@ -136,7 +172,7 @@ router.route('/reviews/:title')
             Movie.aggregate([
                 {
                     $match: {
-                        Title: title
+                        Title: movieTitle
                     }
                 },
                 {
@@ -144,7 +180,7 @@ router.route('/reviews/:title')
                         {
                             from: 'reviews',
                             localField: 'title',
-                            foreignField: 'MovieTitle',
+                            foreignField: 'movieTitle',
                             as: 'reviews'
                         }
                 }
