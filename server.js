@@ -101,35 +101,14 @@ router.route('/movie/:title')
 
 router.route('/movies')
     .get(authJwtController.isAuthenticated, function (req, res) {
-        Movie.find(function (err, movies) {
-            if (err) res.send(err);
-            //movies have been found
-            var reviewOption = req.query.reviews;
-
-            if(reviewOption === "true"){
-                Movie.aggregate([{
-                    $lookup: {
-                        from: "reviews",
-                        localField: "title",
-                        foreignField: "movieTitle",
-                        as: 'review'
-                    }
-                },
-
-                    {
-                        $match:{ title: movie.title }
-                    }
-
-                ], function (err, result) {
-                    if(err) res.send(err);
-                    else res.json(result);
+        router.route('/movies')
+            .get(authJwtController.isAuthenticated, function (req, res) {
+                Movie.find(function (err, movies) {
+                    if (err) res.send(err);
+                    // return the users
+                    res.json(movies);
                 });
-            } else {
-                res.json(movie);
-            }
-
-        });
-    })
+            })
 
     .post(authJwtController.isAuthenticated, function (req, res) {
         var newMovie = new Movie();
