@@ -127,17 +127,17 @@ router.route('/movies')
             res.json({ message: 'Movie created!' });
         });
     });
-/*
+
 router.route('/:movieId')
     .get(authJwtController.isAuthenticated, function (req, res) {
         var id = req.params.movieId;
-        var review = req.headers.reviews;
+        var reviewOption = req.headers.reviews;
         Movie.findById(id, function (err, movie) {
             if (err) res.send(err);
 
             // var movieJson = JSON.stringify(movie);
             // return that user
-            if(review === "true"){
+            if(reviewOption === "true"){
                 Movie.aggregate([{
                     $lookup: {
                         from: "reviews",
@@ -146,9 +146,7 @@ router.route('/:movieId')
                         as: 'review'
                     }
                 },
-                    // {
-                    //     $unwind:"$review"
-                    // },
+
                     {
                         $match:{ title: movie.title }
                     }
@@ -163,7 +161,7 @@ router.route('/:movieId')
         });
 
     })
-*/
+
 router.route('/reviews/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
         if (req.query.reviews === 'true')
