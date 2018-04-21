@@ -101,14 +101,12 @@ router.route('/movie/:title')
 
 router.route('/movies')
     .get(authJwtController.isAuthenticated, function (req, res) {
-        router.route('/movies')
-            .get(authJwtController.isAuthenticated, function (req, res) {
-                Movie.find(function (err, movies) {
-                    if (err) res.send(err);
-                    // return the users
-                    res.json(movies);
-                });
-            })
+        Movie.find(function (err, movies) {
+            if (err) res.send(err);
+            // return the users
+            res.json(movies);
+        });
+    })
 
     .post(authJwtController.isAuthenticated, function (req, res) {
         var newMovie = new Movie();
