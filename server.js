@@ -101,33 +101,8 @@ router.route('/movie/:title')
 
 router.route('/movies')
     .get(authJwtController.isAuthenticated, function (req, res) {
-        var reviewOption = req.params.reviews;
-
         Movie.find(function (err, movies) {
             if (err) res.send(err);
-            if(reviewOption === "true"){
-                Movie.aggregate([{
-                    $lookup: {
-                        from: "reviews",
-                        localField: "title",
-                        foreignField: "movieTitle",
-                        as: 'review'
-                    }
-                },
-
-                    {
-                        $match:{ title: movie.title }
-                    }
-
-                ], function (err, result) {
-                    if(err) res.send(err);
-                    else res.json(result);
-                });
-            } else {
-                res.json(movie);
-            }
-
-
             // return the users
             res.json(movies);
         });
@@ -156,13 +131,13 @@ router.route('/movies')
 router.route('/:movieId')
     .get(authJwtController.isAuthenticated, function (req, res) {
         var id = req.params.movieId;
-        var reviewOption = req.headers.reviews;
+        var review = req.headers.reviews;
         Movie.findById(id, function (err, movie) {
             if (err) res.send(err);
 
             // var movieJson = JSON.stringify(movie);
             // return that user
-            if(reviewOption === "true"){
+            if(review === "true"){
                 Movie.aggregate([{
                     $lookup: {
                         from: "reviews",
@@ -171,7 +146,9 @@ router.route('/:movieId')
                         as: 'review'
                     }
                 },
-
+                    // {
+                    //     $unwind:"$review"
+                    // },
                     {
                         $match:{ title: movie.title }
                     }
