@@ -131,7 +131,7 @@ router.route('/movies')
 router.route('/:movieId')
     .get(authJwtController.isAuthenticated, function (req, res) {
         var id = req.params.movieId;
-        var review = req.headers.reviews;
+        var review = req.query.reviews;
         Movie.findById(id, function (err, movie) {
             if (err) res.send(err);
 
