@@ -101,6 +101,8 @@ router.route('/movie/:title')
 
 router.route('/movies')
     .get(authJwtController.isAuthenticated, function (req, res) {
+        var reviewOption = req.params.reviews;
+
         Movie.find(function (err, movies) {
             if (err) res.send(err);
             if(reviewOption === "true"){
