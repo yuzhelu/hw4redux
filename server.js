@@ -76,8 +76,8 @@ router.route('/movies/viewall')
                 }
             }, {$sort: {avgRating: -1}}]).exec((err, movie)=>{
                 if (err) res.send(err);
-                res.json(movie);
-            });
+            res.json(movie);
+        });
         }
     });
 
