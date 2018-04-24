@@ -16,6 +16,7 @@ var movieSchema = Schema({
         enum: ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy',
             'Horror', 'Mystery', 'Thriller', 'Western']
     },
+    imageUrl:{type:String},
     actors: {type:[actorSchema]}
 });
 
