@@ -8,37 +8,21 @@ var reviewSchema = Schema({
     Rating:{type:Number, max:5, min:1, required: true}
 });
 */
-var reviewSchema = new Schema
-(
+var ReviewSchema = new Schema(
     {
-        movieTitle:
-            {
-                type: String
-            },
-        reviewer:
-            {
-                type: String
-            },
-        rating:
-            {
-                type: Number,
-                min: 1,
-                max: 5
-            },
-        quote:
-            {
-                type: String
-
-            }
-
+        username: {type: String, required: true},
+        review: {type: String, required: true},
+        rating: {type: Number, required: true},
+        movie: {type: String, required: true}
     }
 );
 
-reviewSchema.pre('save', function(next){
-    if(this.length== 0){
-        return next(new Error('Error: Must be one reviewer'));
+ReviewSchema.pre('save',function (next) {
+    if(this.rating > 5 || this.rating < 1){
+        return next(new Error('Rating must be a number from 1 to 5.'));
     }
     next()
 });
 
-module.exports = mongoose.model('Review', reviewSchema);
+// return the model
+module.exports = mongoose.model('Review', ReviewSchema);

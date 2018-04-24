@@ -1,181 +1,38 @@
 var express = require('express');
+var cors = require('cors');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var authJwtController = require('./auth_jwt');
-var User = require('./Users');
-var Movie = require('./Movies');
-var Review = require('./Reviews');
+var User = require('./user');
 var jwt = require('jsonwebtoken');
-var cors = require('cors');
-var decode = require('jwt-decode');
-
+var Movie = require('./movie');
 var dotenv = require('dotenv').config();
 var mongoose = require('mongoose');
+var decode = require('jwt-decode');
+var Review = require('./review');
 
-mongoose.connect(process.env.mongoDB, (err, database) =>{
+mongoose.connect(process.env.mongoDB, (err, database) => {
     if(err) throw err;
     console.log('Connected to database.');
     db = database;
     console.log('Database connected on ' + process.env.mongoDB);
-
-})
+});
 
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
 app.use(passport.initialize());
 app.use(cors());
-app.use(function (req, res, next) {
-res.setHeader('Access-Control-Allow-Origin', '*');
-res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-res.setHeader('Access-Control-Allow-Credentials', true);
-next();
-});
 
 var router = express.Router();
-
-router.route('/postjwt')
-    .post(authJwtController.isAuthenticated, function (req, res) {
-            console.log(req.body);
-            res = res.status(200);
-            if (req.get('Content-Type')) {
-                console.log("Content-Type: " + req.get('Content-Type'));
-                res = res.type(req.get('Content-Type'));
-            }
-            res.send(req.body);
-        }
-    );
-
-router.route('/movie/:title')
-    .get(authJwtController.isAuthenticated, function (req, res) {
-        Movie.findOne({title: req.params.title}).exec(function(err, movie1) {
-            if (err) res.send(err);
-
-            //var userJson = JSON.stringify(movie);
-            // return that user
-            if (movie1 !== null){
-                res.json(movie1);
-            }
-            else{
-                res.json({ message: 'Movie is not found' });
-            }
-
-        });
-    })
-    .delete(authJwtController.isAuthenticated, function (req, res) {
-        if (!req.params.title)
-        {
-            res.json({success: false, msg: 'Please pass movie title.'});
-        }
-        else
-        {
-            Movie.findOne({Title: req.params.title}).exec(function(err, result){ //Make sure movie exists before deleting
-                if (result !== null) {
-                    Movie.remove({Title: req.params.title}).exec(function (err) {
-                        if (err)  res.json({ success: false, message: "Could not find movie with title '" + req.body.Title + "'"});
-                        else res.json({ success: true, message: "Movie deleted."});
-                    })
-                }
-            });
-        }
-    })
-
-    .put(authJwtController.isAuthenticated, function (req, res) {
-        Movie.findOne({Title: req.params.title}).exec(function(err, movie) {
-            if (movie !== null) {
-                newMovie.title = req.body.title;
-                newMovie.yearReleased = req.body.yearReleased;
-                newMovie.genre = req.body.genre;
-                newMovie.actors = req.body.actors;
-                movie.save(function(err) {
-                    if (err) {
-                        // duplicate entry
-                        if (err.code == 11000)
-                            return res.json({ success: false, message: 'Movie title cannot be duplicated. '});
-                        else
-                            return res.send({ success: false,  message:"Failed to update a movie"});
-                    }
-                    res.json({ message: 'Movie updated!' });
-                });
-            }
-            else
-            {
-                res.json({ message: 'Movie is not found' });
-            }
-        });
-    });
-
-
-router.route('/movies')
-    .get(authJwtController.isAuthenticated, function (req, res) {
-        Movie.find(function (err, movies) {
-            if (err) res.send(err);
-            // return the users
-            res.json(movies);
-        });
-    })
-
-    .post(authJwtController.isAuthenticated, function (req, res) {
-        var newMovie = new Movie();
-        newMovie.title = req.body.title;
-        newMovie.yearReleased = req.body.yearReleased;
-        newMovie.genre = req.body.genre;
-        newMovie.actors = req.body.actors;
-        // save the movie
-        newMovie.save(function(err) {
-            if (err) {
-                // duplicate entry
-                if (err.code == 11000)
-                    return res.json({ success: false, message: 'Movie title cannot be duplicated. '});
-                else
-                    return res.send({ success: false,  message:"Failed to create a movie"});
-            }
-
-            res.json({ message: 'Movie created!' });
-        });
-    });
-
-router.route('/:movieId')
-    .get(authJwtController.isAuthenticated, function (req, res) {
-        var id = req.params.movieId;
-        var reviewOption = req.query.reviews;
-        Movie.findById(id, function (err, movie) {
-            if (err) res.send(err);
-
-            // var movieJson = JSON.stringify(movie);
-            // return that user
-            if(reviewOption === "true"){
-                Movie.aggregate([{
-                    $lookup: {
-                        from: "reviews",
-                        localField: "title",
-                        foreignField: "movieTitle",
-                        as: 'reviews'
-                    }
-                },
-
-                    {
-                        $match:{ title: movie.title }
-                    }
-
-                ], function (err, result) {
-                    if(err) res.send(err);
-                    else res.json(result);
-                });
-            } else {
-                res.json(movie);
-            }
-        });
-
-    })
-
+var signinUser = "";
 
 router.route('/movies/view/:title')
     .get(authJwtController.isAuthenticated, function (req, res) {
         var title = req.params.title;
-        var reviewOption = req.query.reviews;
-        if (reviewOption !== "true"){
+        var viewReview = req.query.reviews;
+        if (viewReview !== "true"){
             Movie.findOne({title: title}, function(err, movie) {
                 if (err) res.send(err);
 
@@ -190,7 +47,7 @@ router.route('/movies/view/:title')
                 $lookup:{
                     from: "reviews",
                     localField: "title",
-                    foreignField: "movieTitle",
+                    foreignField: "movie",
                     as: "movie_reviews"
                 }
             }]).exec((err, movie)=>{
@@ -202,8 +59,8 @@ router.route('/movies/view/:title')
 
 router.route('/movies/viewall')
     .get(authJwtController.isAuthenticated, function (req, res) {
-        var reviewOption = req.query.reviews;
-        if (reviewOption !== "true"){
+        var viewReview = req.query.reviews;
+        if (viewReview !== "true"){
             Movie.find(function (err, movie) {
                 if (err) res.send(err);
                 res.json(movie);
@@ -214,7 +71,7 @@ router.route('/movies/viewall')
                 $lookup:{
                     from: "reviews",
                     localField: "title",
-                    foreignField: "movieTitle",
+                    foreignField: "movie",
                     as: "movie_reviews"
                 }
             }, {$sort: {avgRating: -1}}]).exec((err, movie)=>{
@@ -224,77 +81,90 @@ router.route('/movies/viewall')
         }
     });
 
-
-router.route('/reviews/:title')
-    .get(authJwtController.isAuthenticated, function (req, res) {
-        if (req.query.reviews === 'true')
-        {
-            var title = req.params.title;
-            Movie.aggregate([
-                {
-                    $match: {
-                        Title: movieTitle
+router.route('/movies/insert')
+    .post(authJwtController.isAuthenticated, function (req, res) {
+        Movie.findOne({title: req.body.title}).exec(function(err, movie){
+            if (movie === null){
+                var newMovie = new Movie(req, res);
+                newMovie.title = req.body.title;
+                newMovie.year = req.body.year;
+                newMovie.genre = req.body.genre;
+                newMovie.actors = req.body.actors;
+                newMovie.save(function(err) {
+                    if (err) {
+                        // duplicate entry
+                        if (err.code == 11000)
+                            return res.json({ success: false, msg: 'Movie already in database.'});
+                        else
+                            return res.send(err);
                     }
-                },
-                {
-                    $lookup:
-                        {
-                            from: 'reviews',
-                            localField: 'title',
-                            foreignField: 'movieTitle',
-                            as: 'reviews'
-                        }
-                }
 
-            ]).exec((err, movie)=>{
-                if (err) res.json({message: 'Failed to get review'});
-                res.json(movie);
-            });
-        }
-        else
-        {
-            res.json({message: 'Please send a response with the query parameter true'});
-        }
-
-
-        Movie.findOne({Title: req.params.title}).exec(function(err, movie1) {
-            if (err) res.send(err);
-
-            //var userJson = JSON.stringify(movie);
-            // return that user
-            if (movie1 !== null){
-                res.json(movie1);
+                    res.json({ msg: 'Movie insert success.' });
+                });
             }
             else{
-                res.json({ message: 'Movie is not found' });
+                res.json({ msg: 'Movie already in database.'});
             }
-
         });
     });
 
-router.route('/reviews').post(authJwtController.isAuthenticated, function (req, res) {
-    Movie.findOne({Title: req.body.MovieTitle}).exec(function (err, movie) {
-        if (err) res.send(err);
-        // if the movie with reviews already exists, then just add new Reviews
-        if (movie !== null) {
-            var newReview = new Review();
-            newReview.MovieTitle = req.body.MovieTitle;
-            newReview.ReviewerName = req.body.ReviewerName;
-            newReview.Quote = req.body.Quote;
-            newReview.Rating = req.body.Rating;
-            newReview.save(function (err) {
-                if (err) {
-                    return res.send({success: false, message: "Failed to create a review"});
-                }
-                res.json({message: 'Review created!'});
-            });
-        }
-        else
-        {
-            res.json({message: 'Movie with the title not found'});
-        }
+router.route('/movies/update/:title')
+    .put(authJwtController.isAuthenticated, function (req, res) {
+        Movie.findOne({title: req.params.title}).exec(function(err, movie) {
+            if (movie !== null) {
+                movie.title = req.body.title;
+                movie.year = req.body.year;
+                movie.genre = req.body.genre;
+                movie.actors = req.body.actors;
+                movie.save(function(err) {
+                    if (err) {
+                        // duplicate entry
+                        if (err.code == 11000)
+                            return res.json({ success: false, msg: 'Movie already exists in database.'});
+                        else
+                            return res.send(err);
+                    }
+                    res.json({ msg: 'Movie update success.' });
+                });
+            }
+            else
+            {
+                res.json({ msg: 'Movie update failed. Movie does not exist in database.' });
+            }
+        });
     });
-});
+
+router.route('/movies/delete/:title')
+    .delete(authJwtController.isAuthenticated, function(req, res){
+        Movie.remove({title: req.params.title}, function(err, movie){
+            if (err) return res.send(err);
+            Review.remove({movie: req.params.title}, function(err, review){
+                if(err) return (res.send(err));
+            });
+            res.json({msg: 'Movie delete successful.'});
+        });
+    });
+
+router.route('/reviews/viewall')
+    .get(authJwtController.isAuthenticated, function (req, res) {
+        Review.find(function (err, review) {
+            if (err) return res.send(err);
+            res.json(review);
+        });
+    });
+
+router.route('/reviews/viewuser')
+    .get(authJwtController.isAuthenticated, function (req, res) {
+        Review.find({username: signinUser}, function (err, review) {
+            if (err) res.send(err);
+            if (review === null){
+                res.json({msg: "User has not posted any reviews."});
+            }
+            else {
+                res.json(review);
+            }
+        });
+    });
 
 router.route('/reviews/insert/:title')
     .post(authJwtController.isAuthenticated, function (req, res) {
@@ -304,10 +174,10 @@ router.route('/reviews/insert/:title')
         Movie.findOne({title: req.params.title}).exec(function(err, movie){
             if (movie !== null){
                 var newReview = new Review(req, res);
-                newReview.reviewer = username;
+                newReview.username = username;
                 newReview.review = req.body.review;
                 newReview.rating = req.body.rating;
-                newReview.movieTitle = req.params.title;
+                newReview.movie = req.params.title;
                 newReview.save(function(err) {
                     if (err) {
                         // duplicate entry
@@ -317,7 +187,7 @@ router.route('/reviews/insert/:title')
                             return res.send(err);
                     }
                     else{
-                        Review.find({movieTitle: req.params.title}).count(function(err, numReview){
+                        Review.find({movie: req.params.title}).count(function(err, numReview){
                             if (err) return res.send(err);
                             else{
                                 Movie.distinct("avgRating", {title: req.params.title}).exec(function(err, rating){
@@ -342,62 +212,36 @@ router.route('/reviews/insert/:title')
         });
     });
 
-router.route('/reviews')
-    .get(authJwtController.isAuthenticated, function (req, res) {
-        if (req.query.reviews === 'true')
-        {
-            Movie.aggregate([
-                {
-                    $lookup:
-                        {
-                            from: 'reviews',
-                            localField: 'Title',
-                            foreignField: 'MovieTitle',
-                            as: 'Reviews'
-                        }
-                }
-            ]).exec((err, movie)=>{
-                if (err) res.json({message: 'Failed to get reviews'});
-                res.json(movie);
-            });
-        }
-        else
-        {
-            res.json({message: 'Please send a response with the query parameter true'});
-        }
-    });
-
 router.post('/signup', function(req, res) {
-    if (!req.body.username || !req.body.password) {
-        res.json({success: false, msg: 'Please pass username and password.'});
+    if (!req.body.username || !req.body.fullname || !req.body.password) {
+        res.json({success: false, msg: 'Please pass username, fullname, and password.'});
     }
     else {
         var user = new User();
-        user.name = req.body.name;
         user.username = req.body.username;
+        user.fullname = req.body.fullname;
         user.password = req.body.password;
-        // save the user
+
         user.save(function(err) {
             if (err) {
                 // duplicate entry
                 if (err.code == 11000)
-                    return res.json({ success: false, message: 'A user with that username already exists. '});
+                    return res.json({ success: false, msg: 'User already exists in database. '});
                 else
                     return res.send(err);
             }
-
-            res.json({ message: 'User created!' });
+            res.json({ msg: 'User sign up success.' });
         });
     }
 });
 
 router.post('/signin', function(req, res) {
     var userNew = new User();
-    userNew.name = req.body.name;
     userNew.username = req.body.username;
+    userNew.fullname = req.body.fullname;
     userNew.password = req.body.password;
 
-    User.findOne({ username: userNew.username }).select('name username password').exec(function(err, user) {
+    User.findOne({ username: userNew.username }).select('username fullname password').exec(function(err, user) {
         if (err) res.send(err);
 
         user.comparePassword(userNew.password, function(isMatch){
@@ -416,4 +260,5 @@ router.post('/signin', function(req, res) {
 });
 
 app.use('/', router);
-app.listen(process.env.PORT || 8080);
+app.listen(process.env.PORT || 5000);
+console.log("Listening on port " + (process.env.PORT || 5000));
